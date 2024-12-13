@@ -166,11 +166,6 @@
             calculateTotal();
         })
 
-        
-
-
-
-
     });
 
 function validate() {

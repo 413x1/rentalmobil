@@ -54,7 +54,7 @@
                                 <td> Rp. {{ number_format($row->total_denda, 0, ',', '.') }} </td>
 
                                 {{-- Total Harga + Denda --}}
-                                <td> Rp. {{ number_format($totalHarga + $totalDenda, 0, ',', '.') }} </td>
+                                <td> Rp. {{ number_format($totalHarga + $row->total_denda, 0, ',', '.') }} </td>
                                 <td> {{$row->user->nama ?? 'Tidak tersedia'}} </td>
                                 <td> 
                                     <a href="{{ route('backend.penyewaan.edit', $row->penyewaan_id) }}" title="Ubah Data"> 

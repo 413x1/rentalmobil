@@ -149,53 +149,53 @@ class PenyewaanController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-{
-    $penyewaan = Penyewaan::findOrFail($id);
+    {
+        $penyewaan = Penyewaan::findOrFail($id);
 
-    // Validasi input form
-    $rules = [
-        'user_id' => 'required', 
-        'penyewa_id' => 'required', 
-        'merk_id' => 'required', 
-        'mobil_id' => 'required', 
-        'sewa' => 'required|date', 
-        'kembali' => 'required|date|after_or_equal:sewa',  
-        'harga' => 'required|numeric',  // Pastikan harga adalah angka
-        'nopolisi' => 'required|string', // Nopolisi
-    ];
+        // Validasi input form
+        $rules = [
+            'user_id' => 'required', 
+            'penyewa_id' => 'required',
+            'mobil_id' => 'required', 
+            'sewa' => 'required|date', 
+            'kembali' => 'required|date|after_or_equal:sewa',
+            'hari_terlambat' => 'required|numeric'
+        ];
 
-    $messages = [ 
-        'sewa.required' => 'Tanggal sewa harus diisi.', 
-        'kembali.required' => 'Tanggal kembali harus diisi.', 
-        'kembali.after_or_equal' => 'Tanggal kembali harus lebih besar atau sama dengan Tanggal sewa.', 
-    ];
+        $messages = [ 
+            'sewa.required' => 'Tanggal sewa harus diisi.', 
+            'kembali.required' => 'Tanggal kembali harus diisi.', 
+            'kembali.after_or_equal' => 'Tanggal kembali harus lebih besar atau sama dengan Tanggal sewa.', 
+        ];
 
-    // Validasi data
-    $validatedData = $request->validate($rules, $messages);
+        
+        // Validasi data
+        $validatedData = $request->validate($rules, $messages);
 
-    // Perhitungan Total Harga dan Denda
-    $sewaDate = \Carbon\Carbon::parse($request->sewa);
-    $kembaliDate = \Carbon\Carbon::parse($request->kembali);
-    $diffInDays = $sewaDate->diffInDays($kembaliDate);
-    $totalHarga = $request->harga * $diffInDays;
+        $mobil = Mobil::find($request->mobil_id);
 
-    $today = \Carbon\Carbon::now();
-    $lateDays = $kembaliDate->diffInDays($today, false); // false untuk menghitung hari terlambat
-    $dendaPerHari = 50000; // Denda per hari, misalnya Rp 50.000
-    $totalDenda = 0;
+        // Perhitungan Total Harga dan Denda
+        $sewaDate = \Carbon\Carbon::parse($request->sewa);
+        $kembaliDate = \Carbon\Carbon::parse($request->kembali);
+        $diffInDays = $sewaDate->diffInDays($kembaliDate);
+        $totalHarga = $request->harga * $diffInDays;
 
-    if ($lateDays > 0) {
-        $totalDenda = $lateDays * $dendaPerHari;
+        $lateDays = $request->hari_terlambat;
+        $dendaPerHari = $mobil->total_denda; // Denda per hari, misalnya Rp 50.000
+        $totalDenda = 0;
+
+        if ($lateDays > 0) {
+            $totalDenda = $lateDays * $dendaPerHari;
+        }
+
+        // Update data penyewaan
+        $penyewaan->update(array_merge($validatedData, [
+            'total_harga' => $totalHarga, // Simpan total harga
+            'total_denda' => $totalDenda, // Simpan total denda
+        ]));
+
+        return redirect()->route('backend.penyewaan.index')->with('success', 'Data berhasil diperbaharui'); 
     }
-
-    // Update data penyewaan
-    $penyewaan->update(array_merge($validatedData, [
-        'total_harga' => $totalHarga, // Simpan total harga
-        'total_denda' => $totalDenda, // Simpan total denda
-    ]));
-
-    return redirect()->route('backend.penyewaan.index')->with('success', 'Data berhasil diperbaharui'); 
-}
 
 
     /**
